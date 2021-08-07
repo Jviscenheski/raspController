@@ -72,7 +72,7 @@ class FingerprintSensor():
                 print('No match found!')
             else:
                 print('Found template at position #' + str(self.positionNumber))
-                print('The accuracy score is: ' + str(accuracyScore))]
+                print('The accuracy score is: ' + str(accuracyScore))
 
             # ## Loads the found template to charbuffer 1
             # self.f.loadTemplate(self.positionNumber, 0x01)

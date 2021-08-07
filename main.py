@@ -1,6 +1,7 @@
 from time import sleep
 from gpio import GPIO
 import datetime 
+from database import Database
 
 conveyorTime = 30
 
@@ -57,17 +58,14 @@ def main():
 
     while True:
         gp = GPIO()
-
-        # pega o horário das eleições do banco e compara com o local
-        electionScheduleStart = None
-        electionScheduleEnd = None
-        currentTime = datetime.now()
-
-        if currentTime < electionScheduleStart:
+        db = Database()
+        isElectionTime = db.electionTime(election='Election0')
+        
+        if not isElectionTime:
             # se for antes, aguarda (msg no display e led vermelho piscando) -- watch dog
             gp.lcdDisplay.writeInfo("Waiting to start")
             gp.led.turnOn(gp.led.redLed)
-        elif currentTime >= electionScheduleStart and currentTime < electionScheduleEnd:
+        else:
             # quando der o horário da eleição e msg no display - aguardando próximo voter
             gp.lcdDisplay.writeInfo("Please type", "your id")
             # get voter id - digita o RA (userId)
