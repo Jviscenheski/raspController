@@ -42,7 +42,7 @@ while True:
     # cv2.putText(img, qr_data, position, cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 255, 0, 255), 6)
     # img = vote_detector.detectBar(img)
 
-    # cv2.imshow('Pipa - Circle Detection', img)
+    cv2.imshow('Pipa - Circle Detection', img)
     cap.release()
     if cv2.waitKey(1) == ord('q'):
         break

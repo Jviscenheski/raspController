@@ -123,7 +123,7 @@ class VoteDetector:
 
         return circles
 
-    def executeDetectVotes(self, img):
+    def executeDetectVotes(self, img, draw=False):
         circles = self.detectCircles(img)
 
         if circles is not None:
@@ -133,7 +133,8 @@ class VoteDetector:
             return img, None
 
         return_image = img.copy()
-        # return_image = self.drawCircles(img, circles)
+        if draw:
+            return_image = self.drawCircles(img, circles)
         marked_circles, centroids = self.detectMarkedCircles(img, circles)
 
         if marked_circles.count(1) != 1:
