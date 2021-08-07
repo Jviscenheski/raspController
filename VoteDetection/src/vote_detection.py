@@ -126,10 +126,14 @@ class VoteDetector:
     def executeDetectVotes(self, img):
         circles = self.detectCircles(img)
 
+        if circles is not None:
+            print('Numero de circulos: ', len(circles))
+
         if circles is not None and len(circles[0]) != len(self.vote_labels):
             return img, None
 
-        return_image = self.drawCircles(img, circles)
+        return_image = img.copy()
+        # return_image = self.drawCircles(img, circles)
         marked_circles, centroids = self.detectMarkedCircles(img, circles)
 
         if marked_circles.count(1) != 1:
@@ -145,15 +149,16 @@ class VoteDetector:
             vote_index = np.where(marked_circles == 1)
 
             try:
-                position = (100, 50)
-                cv2.putText(
-                    return_image,  # numpy array on which text is written
-                    votes[vote_index][0],  # text
-                    position,  # position at which writing has to start
-                    cv2.FONT_HERSHEY_SIMPLEX,  # font family
-                    1,  # font size
-                    (0, 255, 0, 255),  # font color
-                    2)  # font stroke
+
+                # position = (100, 50)
+                # cv2.putText(
+                #     return_image,  # numpy array on which text is written
+                #     votes[vote_index][0],  # text
+                #     position,  # position at which writing has to start
+                #     cv2.FONT_HERSHEY_SIMPLEX,  # font family
+                #     1,  # font size
+                #     (0, 255, 0, 255),  # font color
+                #     2)  # font stroke
 
                 return return_image, list(votes[vote_index])
             except Exception as e:
