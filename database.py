@@ -1,3 +1,4 @@
+import datetime
 from pymongo import MongoClient
 
 
@@ -19,6 +20,22 @@ class Database:
         except Exception as e:
             print(e)
         return election_schedule
+
+    def electionTime(self, election):
+        try:
+            schedule = self.schedule.find_one(
+                {"electionName": election},
+            )
+
+            election_start = schedule['electionStart']
+            election_finish = schedule['electionFinish']
+
+            if election_start <= datetime.datetime.now() and election_finish >= datetime.datetime.now():
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(e)
 
     def insertVote(self, ballot, candidate):
         inserted_vote = None
@@ -45,6 +62,8 @@ class Database:
 
 
 # dt = Database()
-# dt.getSchedule('Election0')
+# schedule = dt.getSchedule('Election0')
+# schedule
+# dt.electionTime('Election0')
 # dt.insertVote('1000', 'Fofa')
 # dt.getVoter('0')
