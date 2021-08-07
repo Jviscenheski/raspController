@@ -7,8 +7,8 @@ class Database:
 
         client = MongoClient("mongodb+srv://pipaelection.kmcel.mongodb.net/myFirstDatabase")
 
-    '''
-    def clientIn(company):
+    
+    def getElectionSchedule(company):
         companies.find_one_and_update(
             {"company" : company},
             {"$inc":
@@ -32,5 +32,4 @@ class Database:
             {"company" : company},
         )
         return updatedCompany
-    '''
 

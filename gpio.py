@@ -13,35 +13,24 @@ from servoMotor import ServoMotor
 from lcdDisplay import LCDDisplay
 from picamera import PiCamera
 from fingerprintSensor import FingerprintSensor
+from led import LED
 
 
 class GPIO:
 
     def __init__(self):
 
-        # leds
-        self.greenLed = 14
-        self.redLed = 18
-        self.yellowLed = 15
-
+        self.led = LED()
+        
         self.stepperMotor = StepperMotor()
 
-        self.stepperMotor = ServoMotor()
+        self.servoMotor = ServoMotor()
 
         self.lcdDisplay = LCDDisplay()   
-
-        self.initLEDS() 
 
         self.cameraObj = PiCamera()  
 
         # rasp path to examples --> /usr/share/doc/python-fingerprint/examples 
         self.fingerprintSensor = FingerprintSensor()
-
     
-    def initLEDS(self):
-        gpioLib.setup(self.greenLed, gpioLib.OUT)
-        gpioLib.output(self.greenLed, False)
-        gpioLib.setup(self.redLed, gpioLib.OUT)
-        gpioLib.output(self.redLed, False)
-        gpioLib.setup(self.yellowLed, gpioLib.OUT)
     

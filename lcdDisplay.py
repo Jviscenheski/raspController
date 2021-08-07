@@ -33,9 +33,6 @@ class LCDDisplay():
         # wipe LCD screen before we start
         self.lcd.clear()
 
-        # before we start the main loop - detect active network device and ip address
-        sleep(2)
-
         # date and time
         lcd_line_1 = datetime.now().strftime('%b %d  %H:%M:%S\n')
 
@@ -44,9 +41,7 @@ class LCDDisplay():
 
         # combine both lines into one update to the display
         self.writeInfo(lcd_line_1, lcd_line_2)
-        # self.lcd.message = lcd_line_1 + lcd_line_2
-
-        sleep(2)
+        # self.lcd.message = lcd_line_1 + lcd_line_2    
 
     def writeInfo(self, line1, line2):
 

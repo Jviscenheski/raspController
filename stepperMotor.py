@@ -19,7 +19,6 @@ class StepperMotor:
         gpioLib.setup(self.stepperMotorB2, gpioLib.OUT)
         gpioLib.output(self.stepperMotorB2, False)
 
-
     def controlPort(self, direction=None):
             
         StepPins = [self.stepperMotorA1, self.stepperMotorA2, self.stepperMotorB1, self.stepperMotorB2]

@@ -70,21 +70,22 @@ class FingerprintSensor():
 
             if (self.positionNumber == -1 ):
                 print('No match found!')
-                exit(0)
             else:
                 print('Found template at position #' + str(self.positionNumber))
-                print('The accuracy score is: ' + str(accuracyScore))
+                print('The accuracy score is: ' + str(accuracyScore))]
 
-            ## Loads the found template to charbuffer 1
-            self.f.loadTemplate(self.positionNumber, 0x01)
+            # ## Loads the found template to charbuffer 1
+            # self.f.loadTemplate(self.positionNumber, 0x01)
 
-            ## Downloads the characteristics of template loaded in charbuffer 1
-            characterics = str(self.f.downloadCharacteristics(0x01)).encode('utf-8')
+            # ## Downloads the characteristics of template loaded in charbuffer 1
+            # characterics = str(self.f.downloadCharacteristics(0x01)).encode('utf-8')
 
-            ## Hashes characteristics of template
-            print('SHA-2 hash of template: ' + hashlib.sha256(characterics).hexdigest())
+            # ## Hashes characteristics of template
+            # print('SHA-2 hash of template: ' + hashlib.sha256(characterics).hexdigest())
 
         except Exception as e:
             print('Operation failed!')
             print('Exception message: ' + str(e))
             exit(1)
+        
+        return result[0]
