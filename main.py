@@ -9,12 +9,11 @@ from qr_code import QrCodeManager
 
 conveyorTime = 30
 
-def moveBallot(direction):
+def moveBallot(direction, gp):
     for i in range(0, conveyorTime):
         gp.stepperMotor.controlPort(direction)
         sleep(1)
     
-
 def insertVote(gp):
     # criar funcao para verificar se a criatura ja terminou de preencher o voto
     gp.lcdDisplay.writeInfo("Please insert", "your vote")
@@ -28,13 +27,13 @@ def insertVote(gp):
     valid_votes = []
     while qr_data is None and voteResult is None:
         gp.led.turnOn(gp.led.yellowLed)
-        moveBallot('abrir')
+        moveBallot('abrir', gp)
         ret, frame, cap = getFrames()
         if qr_data is None:
             qr_data = checkQrCode(frame, cap)
             if not qr_data:
                 gp.lcdDisplay.writeInfo("Wrong side up", "Reinsert vote")
-                moveBallot('fechar')
+                moveBallot('fechar', gp)
         elif qr_data is not None and qr_data != 0:
             voteResult, valid_votes = detectAndComputeVote(frame, valid_votes)
             
@@ -46,12 +45,12 @@ def checkVote(gp, voteResult):
     voteConfirmation = input()
     if voteConfirmation:
         gp.led.turnOn(gp.led.greenLed)
-        moveBallot('abrir')
+        moveBallot('abrir', gp)
         gp.led.turnOff(gp.led.greenLed)
         return 1
     else:
         gp.led.turnOn(gp.led.redLed)
-        moveBallot('fechar')
+        moveBallot('fechar', gp)
         gp.led.turnOff(gp.led.redLed)
         return 0
 
