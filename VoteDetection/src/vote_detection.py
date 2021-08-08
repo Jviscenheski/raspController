@@ -1,103 +1,13 @@
 import cv2
 import numpy as np
+import math
 
 
 IMAGES_PATH = '/home/rafh/git/local/DetectCircle/images/'
 
 
-class ColorFixer:
-    HSV_RANGES = {
-        # red is a major color
-        'red': [
-            {
-                'lower': np.array([0, 39, 64]),
-                'upper': np.array([20, 255, 255])
-            },
-            {
-                'lower': np.array([161, 39, 64]),
-                'upper': np.array([180, 255, 255])
-            }
-        ],
-        # yellow is a minor color
-        'yellow': [
-            {
-                'lower': np.array([21, 39, 64]),
-                'upper': np.array([40, 255, 255])
-            }
-        ],
-        # green is a major color
-        'green': [
-            {
-                'lower': np.array([41, 39, 64]),
-                'upper': np.array([80, 255, 255])
-            }
-        ],
-        # cyan is a minor color
-        'cyan': [
-            {
-                'lower': np.array([81, 39, 64]),
-                'upper': np.array([100, 255, 255])
-            }
-        ],
-        # blue is a major color
-        'blue': [
-            {
-                'lower': np.array([101, 39, 64]),
-                'upper': np.array([140, 255, 255])
-            }
-        ],
-        # violet is a minor color
-        'violet': [
-            {
-                'lower': np.array([141, 39, 64]),
-                'upper': np.array([160, 255, 255])
-            }
-        ],
-        # next are the monochrome ranges
-        # black is all H & S values, but only the lower 25% of V
-        'black': [
-            {
-                'lower': np.array([0, 0, 0]),
-                'upper': np.array([180, 255, 63])
-            }
-        ],
-        # gray is all H values, lower 15% of S, & between 26-89% of V
-        'gray': [
-            {
-                'lower': np.array([0, 0, 64]),
-                'upper': np.array([180, 38, 228])
-            }
-        ],
-        # white is all H values, lower 15% of S, & upper 10% of V
-        'white': [
-            {
-                'lower': np.array([0, 0, 229]),
-                'upper': np.array([180, 38, 255])
-            }
-        ]
-    }
-
-    def __init__(self):
-        pass
-
-    def createMask(self, hsv_img, colors):
-
-        mask = np.zeros((hsv_img.shape[0], hsv_img.shape[1]), dtype=np.uint8)
-
-        for color in colors:
-            for color_range in self.HSV_RANGES[color]:
-                mask += cv2.inRange(
-                    hsv_img,
-                    color_range['lower'],
-                    color_range['upper']
-                )
-
-        return mask
-
-
 class VoteDetector:
 
-    color_fixer = ColorFixer()
     vote_labels = []
 
     def __init__(self, vote_labels):
@@ -108,14 +18,78 @@ class VoteDetector:
             img = np.copy(img[..., ::-1])  # RGB 2 BGR
         cv2.imwrite(path+imageName, img)
 
+    def detectAruco(self, img, markerSize=4, totalMarkers=1000, draw=True):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        key = getattr(cv2.aruco, f'DICT_{markerSize}X{markerSize}_{totalMarkers}')
+        arucoDict = cv2.aruco.Dictionary_get(key)
+        arucoParam = cv2.aruco.DetectorParameters_create()
+        (bboxs, ids, rejected) = cv2.aruco.detectMarkers(gray, arucoDict, parameters=arucoParam)
+        if draw:
+            cv2.aruco.drawDetectedMarkers(img, bboxs)
+        # return [bboxs, ids]
+        return [bboxs, ids]
+
+    # def isRotationMatrix(self, R):
+    #     Rt = np.transpose(R)
+    #     shouldBeIdentity = np.dot(Rt, R)
+    #     Id = np.identity(3, dtype=R.dtype)
+    #     n = np.linalg.norm(Id - shouldBeIdentity)
+    #     return n < 1e-6
+    #
+    # # Calculates rotation matrix to euler angles
+    # # The result is the same as MATLAB except the order
+    # # of the euler angles ( x and z are swapped ).
+    # def rotationMatrixToEulerAngles(self, R):
+    #
+    #     assert(self.isRotationMatrix(R))
+    #
+    #     sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+    #
+    #     singular = sy < 1e-6
+    #
+    #     if not singular:
+    #         x = math.atan2(R[2, 1], R[2, 2])
+    #         y = math.atan2(-R[2, 0], sy)
+    #         z = math.atan2(R[1, 0], R[0, 0])
+    #     else:
+    #         x = math.atan2(-R[1, 2], R[1, 1])
+    #         y = math.atan2(-R[2, 0], sy)
+    #         z = 0
+    #
+    #     return np.array([x, y, z])
+
     def detectBar(self, img, onlyCenter=False):
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # primeiro converter para hsv CV_BGR2HSV
+        hsvImage = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-        red_mask = self.color_fixer.createMask(img_hsv, ['red'])
+        # fazer split dos hsvChannels
+        hsvChannels = cv2.split(hsvImage)
 
-        mask_img = cv2.bitwise_and(img_hsv, img_hsv, mask=red_mask)
-        return mask_img
-        lines = cv2.HoughLinesP(mask_img, 1, (3.14 / 360), 50, 50, 10)
+        # hue = 0 para vermelho
+        # huerange = 15
+        hueValue = 0
+        hueRange = 15
+
+        # minsaturation =50
+        # minvalue = 50
+        minSaturation = 50
+        minValue = 50
+
+        # hueimage vai ser hsvchannels[0]
+        hueImage = hsvChannels[0]
+        hueMask = cv2.inRange(hueImage, hueValue - hueRange, hueValue + hueRange)
+
+        if (hueValue - hueRange < 0 or hueValue + hueRange > 180):
+            upperHueValue = hueValue + 180
+            hueMaskUpper = cv2.inRange(hueImage, upperHueValue - hueRange,
+                                       upperHueValue + hueRange)
+            hueMask = hueMask | hueMaskUpper
+
+        saturationMask = hsvChannels[1] > minSaturation
+        valueMask = hsvChannels[2] > minValue
+        hueMask = (hueMask & saturationMask) & valueMask
+        result = cv2.bitwise_and(img, img, mask=hueMask)
+        lines = cv2.HoughLinesP(hueMask, 1, (3.14 / 360), 50, 50, 10)
 
         if lines is not None and len(lines) and len(lines[0]) == 1:
             if onlyCenter:
@@ -125,60 +99,12 @@ class VoteDetector:
 
             for line in lines[0]:
                 centroid = int((line[0]+line[2])/2), int((line[1]+line[3])/2)
-                cv2.circle(mask_img, centroid, 1, (0, 255, 0), 8)
+                cv2.circle(result, centroid, 1, (0, 255, 0), 8)
                 pt1 = (line[0], line[1])
                 pt2 = (line[2], line[3])
-                cv2.line(mask_img, pt1, pt2, (255, 255, 255), 2)
+                cv2.line(result, pt1, pt2, (255, 255, 255), 2)
 
-        return img_hsv
-
-    # def detectBar(self, img, onlyCenter=False):
-    #     # primeiro converter para hsv CV_BGR2HSV
-    #     hsvImage = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    #
-    #     # fazer split dos hsvChannels
-    #     hsvChannels = cv2.split(hsvImage)
-    #
-    #     # hue = 0 para vermelho
-    #     # huerange = 15
-    #     hueValue = 0
-    #     hueRange = 15
-    #
-    #     # minsaturation =50
-    #     # minvalue = 50
-    #     minSaturation = 50
-    #     minValue = 50
-    #
-    #     # hueimage vai ser hsvchannels[0]
-    #     hueImage = hsvChannels[0]
-    #     hueMask = cv2.inRange(hueImage, hueValue - hueRange, hueValue + hueRange)
-    #
-    #     if (hueValue - hueRange < 0 or hueValue + hueRange > 180):
-    #         upperHueValue = hueValue + 180
-    #         hueMaskUpper = cv2.inRange(hueImage, upperHueValue - hueRange,
-    #                                    upperHueValue + hueRange)
-    #         hueMask = hueMask | hueMaskUpper
-    #
-    #     saturationMask = hsvChannels[1] > minSaturation
-    #     valueMask = hsvChannels[2] > minValue
-    #     hueMask = (hueMask & saturationMask) & valueMask
-    #     result = cv2.bitwise_and(img, img, mask=hueMask)
-    #     lines = cv2.HoughLinesP(hueMask, 1, (3.14 / 360), 50, 50, 10)
-    #
-    #     if lines is not None and len(lines) and len(lines[0]) == 1:
-    #         if onlyCenter:
-    #             centroid = int((lines[0][0][0]+lines[0][0][2]) /
-    #                            2), int((lines[0][0][1]+lines[0][0][3])/2)
-    #             return centroid
-    #
-    #         for line in lines[0]:
-    #             centroid = int((line[0]+line[2])/2), int((line[1]+line[3])/2)
-    #             cv2.circle(result, centroid, 1, (0, 255, 0), 8)
-    #             pt1 = (line[0], line[1])
-    #             pt2 = (line[2], line[3])
-    #             cv2.line(result, pt1, pt2, (255, 255, 255), 2)
-    #
-    #     return result
+        return result
 
     def detectMarkedCircles(self, img, circles):
         marked_circles = list()
@@ -238,18 +164,13 @@ class VoteDetector:
 
         return circles
 
-    def executeDetectVotes(self, img, draw=False):
+    def executeDetectVotes(self, img):
         circles = self.detectCircles(img)
-
-        if circles is not None:
-            print('Numero de circulos: ', len(circles))
 
         if circles is not None and len(circles[0]) != len(self.vote_labels):
             return img, None
 
-        return_image = img.copy()
-        if draw:
-            return_image = self.drawCircles(img, circles)
+        return_image = self.drawCircles(img, circles)
         marked_circles, centroids = self.detectMarkedCircles(img, circles)
 
         if marked_circles.count(1) != 1:
@@ -265,16 +186,15 @@ class VoteDetector:
             vote_index = np.where(marked_circles == 1)
 
             try:
-
-                # position = (100, 50)
-                # cv2.putText(
-                #     return_image,  # numpy array on which text is written
-                #     votes[vote_index][0],  # text
-                #     position,  # position at which writing has to start
-                #     cv2.FONT_HERSHEY_SIMPLEX,  # font family
-                #     1,  # font size
-                #     (0, 255, 0, 255),  # font color
-                #     2)  # font stroke
+                position = (100, 50)
+                cv2.putText(
+                    return_image,  # numpy array on which text is written
+                    votes[vote_index][0],  # text
+                    position,  # position at which writing has to start
+                    cv2.FONT_HERSHEY_SIMPLEX,  # font family
+                    1,  # font size
+                    (0, 255, 0, 255),  # font color
+                    2)  # font stroke
 
                 return return_image, list(votes[vote_index])
             except Exception as e:
