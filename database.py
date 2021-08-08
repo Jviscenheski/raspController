@@ -12,24 +12,24 @@ class Database:
         self.votes = self.db.votes
         self.voters = self.db.voters
 
-    def getSchedule(self, election):
+    def getSchedule(self):
         try:
             election_schedule = self.schedule.find_one(
-                {"electionName": election},
+                {"realm_id": "123"},
             )
         except Exception as e:
             print(e)
         return election_schedule
 
-    def electionTime(self, election):
+    def electionTime(self):
         try:
             schedule = self.schedule.find_one(
-                {"electionName": election},
+                {"realm_id": "123"},
             )
-
+            
             election_start = schedule['electionStart']
             election_finish = schedule['electionFinish']
-
+            
             if election_start <= datetime.datetime.now() and election_finish >= datetime.datetime.now():
                 return True
             else:

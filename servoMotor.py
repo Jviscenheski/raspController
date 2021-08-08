@@ -10,11 +10,21 @@ class ServoMotor:
         # servomotors startup
         self.rpi.set_PWM_frequency(self.servoPin, 50)
         # set starting pen position, raise, lower, raise pen
-        self.rpi.set_servo_pulsewidth(self.servoPin, 1000)
+        # self.rpi.set_servo_pulsewidth(self.servoPin, 1000)
 
     def openGate(self):
-        self.rpi.set_servo_pulsewidth(self.servoPin, 1000)
+        i = 1800
+        while i >= 1000:
+            self.rpi.set_servo_pulsewidth(self.servoPin, i)
+            sleep(0.02)
+            i -= 20
+            
+            
 
     def closeGate(self):
-        self.rpi.set_servo_pulsewidth(self.servoPin, 1200)
+        i = 1000
+        while i <= 1800:
+            self.rpi.set_servo_pulsewidth(self.servoPin, i)
+            sleep(0.02)
+            i += 20
     

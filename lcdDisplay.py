@@ -19,10 +19,10 @@ class LCDDisplay():
         # v1 - v3B+
         self.regSel = digitalio.DigitalInOut(board.D16)
         self.enable = digitalio.DigitalInOut(board.D20)
-        self.d4 = digitalio.DigitalInOut(board.D12)
+        self.d4 = digitalio.DigitalInOut(board.D8)
         self.d5 = digitalio.DigitalInOut(board.D1)
         self.d6 = digitalio.DigitalInOut(board.D7)
-        self.d7 = digitalio.DigitalInOut(board.D8)
+        self.d7 = digitalio.DigitalInOut(board.D12)
 
 
         # Initialise the lcd class
@@ -32,7 +32,9 @@ class LCDDisplay():
     
         # wipe LCD screen before we start
         self.lcd.clear()
-
+        
+        sleep(2)
+        '''
         # date and time
         lcd_line_1 = datetime.now().strftime('%b %d  %H:%M:%S\n')
 
@@ -41,11 +43,13 @@ class LCDDisplay():
 
         # combine both lines into one update to the display
         self.writeInfo(lcd_line_1, lcd_line_2)
-        # self.lcd.message = lcd_line_1 + lcd_line_2    
+        # self.lcd.message = lcd_line_1 + lcd_line_2
+        '''
 
     def writeInfo(self, line1, line2):
-
-        self.lcd.message = line1 + line2
+        
+        self.lcd.clear()
+        self.lcd.message = line1 + '\n' + line2
 
 
 

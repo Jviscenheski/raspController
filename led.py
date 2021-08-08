@@ -33,10 +33,11 @@ class LED:
         gpioLib.setup(self.redLed, gpioLib.OUT)
         gpioLib.output(self.redLed, False)
         gpioLib.setup(self.yellowLed, gpioLib.OUT)
+        gpioLib.output(self.yellowLed, False)
     
     def turnOn(self, led):
-        gpioLib.output(self.led, True)
+        gpioLib.output(led, True)
 
     def turnOff(self, led):
-        gpioLib.output(self.led, False)
+        gpioLib.output(led, False)
     

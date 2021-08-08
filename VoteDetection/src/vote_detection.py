@@ -80,8 +80,9 @@ class VoteDetector:
                 result = img[(y-r):(y+(r)), (x-r):(x+(r))]
                 colors, count = np.unique(
                     result.reshape(-1, result.shape[-1]), axis=0, return_counts=True)
+                
                 if len(count):
-                    black = list(colors[count.argmax()]) <= list([150, 150, 150])
+                    black = list(colors[count.argmax()]) <= list([50, 50, 50])
 
                 if black:
                     marked_circles.append(1)
@@ -119,7 +120,7 @@ class VoteDetector:
         grayed = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blurried = cv2.medianBlur(grayed, 5)
         circles = cv2.HoughCircles(blurried, cv2.HOUGH_GRADIENT, 1, 30,
-                                   param1=50, param2=30, minRadius=30, maxRadius=50)
+                                   param1=50, param2=30, minRadius=15, maxRadius=40)
 
         return circles
 
@@ -127,7 +128,7 @@ class VoteDetector:
         circles = self.detectCircles(img)
 
         if circles is not None:
-            print('Numero de circulos: ', len(circles))
+            print('Numero de circulos: ', len(circles[0]))
 
         if circles is not None and len(circles[0]) != len(self.vote_labels):
             return img, None
@@ -136,7 +137,7 @@ class VoteDetector:
         if draw:
             return_image = self.drawCircles(img, circles)
         marked_circles, centroids = self.detectMarkedCircles(img, circles)
-
+        print(marked_circles)
         if marked_circles.count(1) != 1:
             return return_image, None
 
