@@ -1,7 +1,8 @@
 import cv2
-from vote_detection_backup import VoteDetector
+from vote_detection_test import VoteDetector
 from qr_code import QrCodeManager
 
+# frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/ballotAR.png')
 # frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/hue2.png')
 vote_labels = ['Vote3', 'Vote2', 'Vote1']
 
@@ -18,14 +19,6 @@ while True:
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
 
-    qr_data = qr_code_manager.readQrCode(frame)
-    print(qr_data)
-
-    # if qr_data == 'ops':
-    #     cap.release()
-    #     print('Está de meme? Voto de cabeça para baixo, pô')
-    #     continue
-
     img, vote = vote_detector.executeDetectVotes(frame)
 
     # if isinstance(vote, list):
@@ -39,11 +32,19 @@ while True:
     #     # COLOCAR no BANCO COM VALID_VOTE E QR_DATA
     #     valid_votes = []
 
-    position = (150, 150)
-    cv2.putText(img, qr_data, position, cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 255, 0, 255), 6)
-    # img = vote_detector.detectBar(frame)
+    arucofound, return_image = vote_detector.detectAruco(frame)
+    # ret = cv2.aruco.estimatePoseSingleMarkers(
+    #     arucofound[0], 4, cameraMatrix=mtx, distCoeffs=dist)
+    # (rvec, tvec) = (ret[0][0, 0, :], ret[1][0, 0, :])
+    # print(rvec, tvec)
+   # if len(arucofound[0]) != 0:
+   #      for bbox, id in zip(arucofound[0], arucofound[1]):
+   #          pass
+    # cv2.circle(frame, (int(bbox[0][0][0]), int(bbox[0][0][1])), 1, (0, 0, 255), 8)
+    # print(type(bbox), type(bbox[0]))
+    # print(bbox, id[0])
 
-    cv2.imshow('Pipa - Circle Detection', img)
+    cv2.imshow('Pipa - Circle Detection', return_image)
     cap.release()
     if cv2.waitKey(1) == ord('q'):
         break

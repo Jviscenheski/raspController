@@ -54,7 +54,10 @@ class VoteDetector:
 
         markers = []
 
+        return_image = img
+
         if bboxs:
+
             for bbox, id in zip(bboxs, ids):
                 rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(
                     bboxs, markerSize, self.calibrator.matrix, self.calibrator.distortion)
@@ -68,23 +71,17 @@ class VoteDetector:
                     pass
 
             if draw:
-                cv2.aruco.drawDetectedMarkers(img, bboxs)
+                return_image = cv2.aruco.drawDetectedMarkers(img.copy(), bboxs)
+                for marker in markers:
+                    print(marker.id[0])
 
-        return markers
+                    # cv2.aruco.drawAxis(return_image, self.calibrator.matrix,
+                    #                    self.calibrator.distortion, marker.rvec, marker.tvec, 1)
+                    print(marker.rotation)
+                    if abs(marker.rotation[2]) >= 10:
+                        return_image = self.rotate_image(return_image, marker.rotation[2])
 
-    def getMarkerId(self, markers):
-        return markers[0].id[0]
-
-    def rotateImage(self, img, markers):
-        for marker in markers:
-            # print(marker.id[0])
-
-            # cv2.aruco.drawAxis(img, self.calibrator.matrix,
-            #                    self.calibrator.distortion, marker.rvec, marker.tvec, 1)
-            # print(marker.rotation)
-            if abs(marker.rotation[2]) >= 10:
-                img = self.rotate_image(img, marker.rotation[2])
-            return img
+        return [bboxs, ids], return_image
 
     def rotate_image(self, image, angle):
         image_center = tuple(np.array(image.shape[1::-1]) / 2)
@@ -179,6 +176,9 @@ class VoteDetector:
             y.append(centroid[1])
         for marked_circle, centroid in zip(marked_circles, centroids):
             if marked_circle == 1:
+                print(centroids)
+                print(marked_circles)
+                print(centroid)
                 if centroid[1] == min(y):
                     return 'Voto1'
                 elif centroid[1] == max(y):
@@ -187,49 +187,36 @@ class VoteDetector:
                     return 'Voto2'
         return None
 
-    def executeDetectVotes(self, img, draw):
+    def executeDetectVotes(self, img):
 
-        markers = self.detectAruco(img)
-        if len(markers) <= 0:
-            return img, None, None, None
+        arucofound, aruco_image = self.detectAruco(img)
+        circles = self.detectCircles(aruco_image)
 
-        marker_id = self.getMarkerId(markers)
-        if marker_id == 0:
-            return img, 0, None,  None
-
-        rotated_image = self.rotateImage(img, markers)
-
-        circles = self.detectCircles(rotated_image)
         if circles is not None and len(circles[0]) != len(self.vote_labels):
-            return rotated_image, None, None, None
-        if draw:
-            rotated_image = self.drawCircles(rotated_image, circles)
+            return img, None
 
-        marked_circles, centroids = self.detectMarkedCircles(rotated_image, circles)
+        return_image = self.drawCircles(aruco_image, circles)
+        marked_circles, centroids = self.detectMarkedCircles(aruco_image, circles)
 
-        if marked_circles.count(1) == 0:
-            return rotated_image, marker_id, 2, None
-        elif marked_circles.count(1) > 1:
-            return rotated_image, marker_id, 1, None
+        if marked_circles.count(1) != 1:
+            return return_image, None
 
         valid_vote = self.detectVote(marked_circles, centroids)
 
-        return rotated_image, marker_id, 0, valid_vote
-        #
-        # try:
-        #     position = (100, 50)
-        #     cv2.putText(
-        #         return_image,  # numpy array on which text is written
-        #         valid_vote,  # text
-        #         position,  # position at which writing has to start
-        #         cv2.FONT_HERSHEY_SIMPLEX,  # font family
-        #         1,  # font size
-        #         (0, 255, 0, 255),  # font color
-        #         2)  # font stroke
-        #
-        #     return rotated_image, marker_id, 0, valid_vote
-        # except Exception as e:
-        #     print(e)
-        #     pass
-        #
-        # return rotated_image, marker_id, 0, valid_vote
+        try:
+            position = (100, 50)
+            cv2.putText(
+                return_image,  # numpy array on which text is written
+                valid_vote,  # text
+                position,  # position at which writing has to start
+                cv2.FONT_HERSHEY_SIMPLEX,  # font family
+                1,  # font size
+                (0, 255, 0, 255),  # font color
+                2)  # font stroke
+
+            return return_image, valid_vote
+        except Exception as e:
+            print(e)
+            pass
+
+        return return_image, None

@@ -108,62 +108,14 @@ class VoteDetector:
             img = np.copy(img[..., ::-1])  # RGB 2 BGR
         cv2.imwrite(path+imageName, img)
 
-    def detectBar(self, img, onlyCenter=False):
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-        red_mask = self.color_fixer.createMask(img_hsv, ['red'])
-
-        mask_img = cv2.bitwise_and(img_hsv, img_hsv, mask=red_mask)
-        return mask_img
-        lines = cv2.HoughLinesP(mask_img, 1, (3.14 / 360), 50, 50, 10)
-
-        if lines is not None and len(lines) and len(lines[0]) == 1:
-            if onlyCenter:
-                centroid = int((lines[0][0][0]+lines[0][0][2]) /
-                               2), int((lines[0][0][1]+lines[0][0][3])/2)
-                return centroid
-
-            for line in lines[0]:
-                centroid = int((line[0]+line[2])/2), int((line[1]+line[3])/2)
-                cv2.circle(mask_img, centroid, 1, (0, 255, 0), 8)
-                pt1 = (line[0], line[1])
-                pt2 = (line[2], line[3])
-                cv2.line(mask_img, pt1, pt2, (255, 255, 255), 2)
-
-        return img_hsv
-
     # def detectBar(self, img, onlyCenter=False):
-    #     # primeiro converter para hsv CV_BGR2HSV
-    #     hsvImage = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    #     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     #
-    #     # fazer split dos hsvChannels
-    #     hsvChannels = cv2.split(hsvImage)
+    #     red_mask = self.color_fixer.createMask(img_hsv, ['red'])
     #
-    #     # hue = 0 para vermelho
-    #     # huerange = 15
-    #     hueValue = 0
-    #     hueRange = 15
-    #
-    #     # minsaturation =50
-    #     # minvalue = 50
-    #     minSaturation = 50
-    #     minValue = 50
-    #
-    #     # hueimage vai ser hsvchannels[0]
-    #     hueImage = hsvChannels[0]
-    #     hueMask = cv2.inRange(hueImage, hueValue - hueRange, hueValue + hueRange)
-    #
-    #     if (hueValue - hueRange < 0 or hueValue + hueRange > 180):
-    #         upperHueValue = hueValue + 180
-    #         hueMaskUpper = cv2.inRange(hueImage, upperHueValue - hueRange,
-    #                                    upperHueValue + hueRange)
-    #         hueMask = hueMask | hueMaskUpper
-    #
-    #     saturationMask = hsvChannels[1] > minSaturation
-    #     valueMask = hsvChannels[2] > minValue
-    #     hueMask = (hueMask & saturationMask) & valueMask
-    #     result = cv2.bitwise_and(img, img, mask=hueMask)
-    #     lines = cv2.HoughLinesP(hueMask, 1, (3.14 / 360), 50, 50, 10)
+    #     mask_img = cv2.bitwise_and(img_hsv, img_hsv, mask=red_mask)
+    #     return mask_img
+    #     lines = cv2.HoughLinesP(mask_img, 1, (3.14 / 360), 50, 50, 10)
     #
     #     if lines is not None and len(lines) and len(lines[0]) == 1:
     #         if onlyCenter:
@@ -173,12 +125,60 @@ class VoteDetector:
     #
     #         for line in lines[0]:
     #             centroid = int((line[0]+line[2])/2), int((line[1]+line[3])/2)
-    #             cv2.circle(result, centroid, 1, (0, 255, 0), 8)
+    #             cv2.circle(mask_img, centroid, 1, (0, 255, 0), 8)
     #             pt1 = (line[0], line[1])
     #             pt2 = (line[2], line[3])
-    #             cv2.line(result, pt1, pt2, (255, 255, 255), 2)
+    #             cv2.line(mask_img, pt1, pt2, (255, 255, 255), 2)
     #
-    #     return result
+    #     return img_hsv
+
+    def detectBar(self, img, onlyCenter=False):
+        # primeiro converter para hsv CV_BGR2HSV
+        hsvImage = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        # fazer split dos hsvChannels
+        hsvChannels = cv2.split(hsvImage)
+
+        # hue = 0 para vermelho
+        # huerange = 15
+        hueValue = 0
+        hueRange = 15
+
+        # minsaturation =50
+        # minvalue = 50
+        minSaturation = 50
+        minValue = 50
+
+        # hueimage vai ser hsvchannels[0]
+        hueImage = hsvChannels[0]
+        hueMask = cv2.inRange(hueImage, hueValue - hueRange, hueValue + hueRange)
+
+        if (hueValue - hueRange < 0 or hueValue + hueRange > 180):
+            upperHueValue = hueValue + 180
+            hueMaskUpper = cv2.inRange(hueImage, upperHueValue - hueRange,
+                                       upperHueValue + hueRange)
+            hueMask = hueMask | hueMaskUpper
+
+        saturationMask = hsvChannels[1] > minSaturation
+        valueMask = hsvChannels[2] > minValue
+        hueMask = (hueMask & saturationMask) & valueMask
+        result = cv2.bitwise_and(img, img, mask=hueMask)
+        lines = cv2.HoughLinesP(hueMask, 1, (3.14 / 360), 50, 50, 10)
+
+        if lines is not None and len(lines) and len(lines[0]) == 1:
+            if onlyCenter:
+                centroid = int((lines[0][0][0]+lines[0][0][2]) /
+                               2), int((lines[0][0][1]+lines[0][0][3])/2)
+                return centroid
+
+            for line in lines[0]:
+                centroid = int((line[0]+line[2])/2), int((line[1]+line[3])/2)
+                cv2.circle(result, centroid, 1, (0, 255, 0), 8)
+                pt1 = (line[0], line[1])
+                pt2 = (line[2], line[3])
+                cv2.line(result, pt1, pt2, (255, 255, 255), 2)
+
+        return result
 
     def detectMarkedCircles(self, img, circles):
         marked_circles = list()

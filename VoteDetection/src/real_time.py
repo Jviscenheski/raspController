@@ -2,7 +2,7 @@ import cv2
 from vote_detection import VoteDetector
 from qr_code import QrCodeManager
 
-frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/ballotARiaa.png')
+# frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/ballotAR.png')
 # frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/hue2.png')
 vote_labels = ['Vote3', 'Vote2', 'Vote1']
 
@@ -12,45 +12,73 @@ def getMode(lst):
 
 
 vote_detector = VoteDetector(vote_labels)
-qr_code_manager = QrCodeManager()
 
-valid_votes = []
-while True:
-    # cap = cv2.VideoCapture(0)
-    # ret, frame = cap.read()
 
-    # qr_data = qr_code_manager.readQrCode(frame)
-    #
-    # if qr_data == 'ops':
-    #     cap.release()
-    #     print('Está de meme? Voto de cabeça para baixo, pô')
-    #     continue
-    #
-    # img, vote = vote_detector.executeDetectVotes(frame)
-    #
-    # if isinstance(vote, list):
-    #     valid_votes.append(vote[0])
-    # else:
-    #     valid_votes.append(vote)
-    #
-    # if len(valid_votes) >= 10:
-    #     valid_vote = getMode(valid_votes)
-    #     print(valid_vote)
-    #     # COLOCAR no BANCO COM VALID_VOTE E QR_DATA
-    #     valid_votes = []
-    #
-    # position = (150, 150)
-    # cv2.putText(img, qr_data, position, cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 255, 0, 255), 6)
-    # img = vote_detector.detectBar(img)
-    # img = vote_detector.detectAruco(frame)
-    arucofound = vote_detector.detectAruco(frame)
-    if len(arucofound[0]) != 0:
-        for bbox, id in zip(arucofound[0], arucofound[1]):
-            print(id[0])
+def execute():
+    valid_votes = []
+    while True:
+        # for i in range(10):
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
 
-    cv2.imshow('Pipa - Circle Detection', frame)
-    # cap.release()
-    if cv2.waitKey(1) == ord('q'):
-        break
+        return_image, ballot_id, vote_type, valid_vote = vote_detector.executeDetectVotes(
+            frame, draw=False)
 
+        # print(ballot_id, vote_type, valid_vote)
+
+        print('Ballot id: ', ballot_id)
+
+        print('Vote: ', valid_vote)
+
+        # if ballot_id is None:
+        #     cv2.imshow('Pipa - Circle Detection', frame)
+        #     cap.release()
+        #     continue
+        # elif ballot_id == 0:
+        #     # VOLTA
+        #     pass
+        # else:
+        if valid_vote is not None:
+            valid_votes.append(valid_vote)
+
+        # print(valid_votes)
+
+        # if len(valid_votes) >= 3:
+        #     print('Valid vote: ' + getMode(valid_votes))
+        #     valid_votes = []
+
+        cv2.imshow('Pipa - Circle Detection', return_image)
+        cap.release()
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+
+execute()
 cv2.destroyAllWindows()
+# vote_detector = VoteDetector(vote_labels)
+#
+# valid_votes = []
+# while True:
+#     cap = cv2.VideoCapture(0)
+#     ret, frame = cap.read()
+#
+#     return_image, ballot_id, vote_type, valid_vote = vote_detector.executeDetectVotes(frame)
+#
+#     if ballot_id is None:
+#         continue
+#     elif ballot_id == 0:
+#         # VOLTA
+#         pass
+#     else:
+#         valid_votes.append(valid_vote)
+#
+#     if len(valid_votes) >= 5:
+#         print('Valid vote: ' + getMode(valid_votes))
+#         valid_votes = []
+#
+#     cv2.imshow('Pipa - Circle Detection', return_image)
+#     cap.release()
+#     if cv2.waitKey(1) == ord('q'):
+#         break
+#
+# cv2.destroyAllWindows()
