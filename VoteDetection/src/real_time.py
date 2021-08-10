@@ -22,7 +22,7 @@ def execute():
         ret, frame = cap.read()
 
         return_image, ballot_id, vote_type, valid_vote = vote_detector.executeDetectVotes(
-            frame, draw=False)
+            frame, draw=True)
 
         # print(ballot_id, vote_type, valid_vote)
 

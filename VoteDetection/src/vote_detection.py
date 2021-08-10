@@ -31,8 +31,13 @@ class VoteDetector:
             img = np.copy(img[..., ::-1])  # RGB 2 BGR
         cv2.imwrite(path+imageName, img)
 
-    def detectAruco(self, img, markerSize=4, totalMarkers=1000, draw=True):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    def binary(self, img):
+        result = img.copy()
+        (thresh, blackAndWhiteImage) = cv2.threshold(result, 127, 255, cv2.THRESH_BINARY)
+        return result
+
+    def detectAruco(self, gray, markerSize=4, totalMarkers=1000, draw=True):
+        #  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         key = getattr(cv2.aruco, f'DICT_{markerSize}X{markerSize}_{totalMarkers}')
         arucoDict = cv2.aruco.Dictionary_get(key)
         parameters = cv2.aruco.DetectorParameters_create()
@@ -68,7 +73,7 @@ class VoteDetector:
                     pass
 
             if draw:
-                cv2.aruco.drawDetectedMarkers(img, bboxs)
+                cv2.aruco.drawDetectedMarkers(gray, bboxs)
 
         return markers
 
@@ -142,7 +147,13 @@ class VoteDetector:
                 colors, count = np.unique(
                     result.reshape(-1, result.shape[-1]), axis=0, return_counts=True)
                 if len(count):
-                    black = list(colors[count.argmax()]) <= list([150, 150, 150])
+                    black = all(i <= 100 for i in list(colors[count.argmax()]))
+                    # black = list(colors[count.argmax()]) <= list([150, 150, 150])
+
+                print(len(colors))
+
+                # print(list(colors[count.argmax()]))
+                # print(black)
 
                 if black:
                     marked_circles.append(1)
@@ -166,7 +177,8 @@ class VoteDetector:
         return output
 
     def detectCircles(self, img):
-        grayed = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # grayed = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        grayed = img
         blurried = cv2.medianBlur(grayed, 5)
         circles = cv2.HoughCircles(blurried, cv2.HOUGH_GRADIENT, 1, 30,
                                    param1=50, param2=30, minRadius=30, maxRadius=50)
@@ -189,7 +201,13 @@ class VoteDetector:
 
     def executeDetectVotes(self, img, draw):
 
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # gray = self.binary(img)
+        # return img,  None,  None, None
+
         markers = self.detectAruco(img)
+
         if len(markers) <= 0:
             return img, None, None, None
 
@@ -197,7 +215,7 @@ class VoteDetector:
         if marker_id == 0:
             return img, 0, None,  None
 
-        rotated_image = self.rotateImage(img, markers)
+        rotated_image = self.rotateImage(gray, markers)
 
         circles = self.detectCircles(rotated_image)
         if circles is not None and len(circles[0]) != len(self.vote_labels):
