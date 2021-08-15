@@ -79,7 +79,7 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
             gp.led.turnOn(gp.led.greenLed)
             db.insertVote(ballot_id, voteResult, vote_type)
             db.setVoterStatus(voter['userId'], "complete")
-            moveBallot('abrir', gp, conveyorTime=20)
+            moveBallot('abrir', gp, conveyorTime=25)
             gp.led.turnOff(gp.led.greenLed)
             return 1
         elif voteConfirmation == '*':
