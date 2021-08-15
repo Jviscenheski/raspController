@@ -19,7 +19,8 @@ from led import LED
 class GPIO:
 
     def __init__(self):
-
+        self.a = 0
+        
         self.led = LED()
         
         self.stepperMotor = StepperMotor()
@@ -32,5 +33,6 @@ class GPIO:
 
         # rasp path to examples --> /usr/share/doc/python-fingerprint/examples 
         self.fingerprintSensor = FingerprintSensor()
+        
     
     

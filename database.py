@@ -33,8 +33,6 @@ class Database:
             
             election_start = schedule['electionStart'] - timedelta(hours=3, minutes=0)
             election_finish = schedule['electionFinish'] - timedelta(hours=3, minutes=0)
-            print(election_start)
-            print(election_finish)
             
             if election_start <= datetime.datetime.now() and election_finish >= datetime.datetime.now():
                 return True
@@ -81,6 +79,13 @@ class Database:
             print(e)
         return voter
 
+    def getVoters(self):
+        try:
+            countVoters = self.voters.find({'status': "pending"}).count()
+        except Exception as e:
+            print(e)
+        return countVoters
+
     def getCandidates(self):
         candidates = None
         try:
@@ -90,6 +95,9 @@ class Database:
             print(e)
             
         return candidates
+
+    def getVotes(self):
+        return self.votes.count()
 
 # dt = Database()
 # schedule = dt.getSchedule('Election0')

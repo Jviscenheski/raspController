@@ -20,8 +20,8 @@ class LCDDisplay():
         self.regSel = digitalio.DigitalInOut(board.D16)
         self.enable = digitalio.DigitalInOut(board.D20)
         self.d4 = digitalio.DigitalInOut(board.D8)
-        self.d5 = digitalio.DigitalInOut(board.D1)
-        self.d6 = digitalio.DigitalInOut(board.D7)
+        self.d5 = digitalio.DigitalInOut(board.D7)
+        self.d6 = digitalio.DigitalInOut(board.D1)
         self.d7 = digitalio.DigitalInOut(board.D12)
 
 

@@ -16,11 +16,12 @@ def moveGate(gp):
     
     gp.lcdDisplay.writeInfo("Please insert", "your vote")
     gp.servoMotor.openGate()
-    for i in reversed(range(0, 10)):
-        gp.lcdDisplay.writeInfo("Gate closes in ", str(i) + " seconds")
-        sleep(1)
-    gp.servoMotor.closeGate()
-    
+    gp.lcdDisplay.writeInfo("Please confirm to", "close the gate")
+    while True:
+        cg = input()
+        if cg == "'\'":
+            gp.servoMotor.closeGate()
+            break
     
 def insertVote(gp, vote_detector):
     # criar funcao para verificar se a criatura ja terminou de preencher o voto
@@ -113,7 +114,6 @@ def initVotingProcess(gp, vote_detector, db, voter):
         ballot_id, voteResult, vote_type = insertVote(gp, vote_detector)
         voteConfirmed = checkVote(gp, voteResult, db, ballot_id, voter, vote_type)
     
-    print("cabou")
     print(ballot_id, voteConfirmed)
     
     
@@ -137,6 +137,7 @@ def main():
     db = Database()
     vote_labels = db.getCandidates()
     vote_detector = VoteDetector(vote_labels)
+    
     loginErrorMssg = {0: ('Invalid finger', 'Try again'), 1:('Invalid finger', 'Try again'), 2:('Invalid finger', 'change method')}
     
     while True:
@@ -153,63 +154,47 @@ def main():
             gp.led.turnOff(gp.led.redLed)
             gp.led.turnOn(gp.led.yellowLed)
             # quando der o horário da eleição e msg no display - aguardando próximo voter
-            gp.lcdDisplay.writeInfo("Please type ", "your id")
-            # get voter id - digita o RA (userId)
+            # gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
             validVoter = None
+            authTries = 0
             while validVoter is None:
-                voterId = input()
-                validVoter = db.getVoter(voterId)   # verifica se o id é válido
-                authTries = 0
-                if validVoter is not None:
-                    if validVoter['status'] == 'pending':
-                        while authTries < 30:
-                            # put your finger in there para autenticar o voter
-                            gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
-                            fingerResult = gp.fingerprintSensor.searchFinger()
-                            if fingerResult == int(voterId):
-                                initVotingProcess(gp, vote_detector, db, validVoter)
-                                break
-                            else:
-                                gp.led.turnOn(gp.led.redLed)
-                                gp.lcdDisplay.writeInfo(loginErrorMssg[authTries][0], loginErrorMssg[authTries][1])
-                                authTries += 1
-                                sleep(2)
-                                gp.led.turnOff(gp.led.redLed)
-                        
-                            if authTries >= 60:
-                                authTries = 0
-                                while authTries < 3:
-                                    gp.lcdDisplay.writeInfo("Type your", "password")
-                                    voterPassword = input()
-                                    if voterPassword == validVoter['password']:
-                                        initVotingProcess(gp, vote_detector, db, validVoter)
-                                        break
-                                    else:
-                                        gp.led.turnOn(gp.led.redLed)
-                                        gp.lcdDisplay.writeInfo('Invalid password', loginErrorMssg[authTries][1])
-                                        sleep(4)
-                                        gp.led.turnOff(gp.led.redLed)
-                                        authTries += 1
-                                authTries = 0
-                    else:
-                        gp.led.turnOff(gp.led.yellowLed)
-                        gp.led.turnOn(gp.led.redLed)
-                        gp.lcdDisplay.writeInfo("You already", "voted")
-                        sleep(3)
-                                                           
+                gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
+                fingerResult = gp.fingerprintSensor.searchFinger()
+                validVoter = db.getVoter(fingerResult)   # verifica se o id é válido
+                if validVoter is None: 
+                    gp.lcdDisplay.writeInfo("Voter didn't", "recognized")
+                    sleep(3)
                 else:
-                    gp.lcdDisplay.writeInfo("Voter not found", "Try again!")
-
+                    if authTries < 3:
+                        if validVoter['status'] == 'pending':
+                            initVotingProcess(gp, vote_detector, db, validVoter)
+                        elif validVoter['status'] == "auth":
+                            gp.led.turnOff(gp.led.yellowLed)
+                            gp.led.turnOn(gp.led.redLed)
+                            gp.lcdDisplay.writeInfo("You're auth", "but didnt vote")
+                            sleep(3)
+                        else:
+                            gp.led.turnOff(gp.led.yellowLed)
+                            gp.led.turnOn(gp.led.redLed)
+                            gp.lcdDisplay.writeInfo("You already", "voted")
+                            sleep(3)
+                    else:
+                        gp.lcdDisplay.writeInfo("Type id", "please")
+                        voterId = input()
+                        validVoter = db.getVoter(voterId)   # verifica se o id é válido
+                        if validVoter is not None:
+                            authTries = 0
+                            while authTries < 3:
+                                gp.lcdDisplay.writeInfo("Type your", "password")
+                                voterPassword = input()
+                                if voterPassword == validVoter['password']:
+                                    initVotingProcess(gp, vote_detector, db, validVoter)
+                                    break
+                                else:
+                                    gp.led.turnOn(gp.led.redLed)
+                                    gp.lcdDisplay.writeInfo('Invalid password', loginErrorMssg[authTries][1])
+                                    sleep(4)
+                                    gp.led.turnOff(gp.led.redLed)
+                                    authTries += 1
+                                authTries = 0         
 main()
-# while True:
-#     cap = cv2.VideoCapture(0)
-#            
-#     ret, frame = cap.read()
-#     cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
-#     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,  480)
-#             
-#     cv2.imshow('Pipa - Circle Detection', frame)
-#     cap.release()
-#     if cv2.waitKey(1) == ord('q'):
-#         break
-# cv2.destroyAllWindows()
