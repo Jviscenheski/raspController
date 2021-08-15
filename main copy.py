@@ -17,7 +17,7 @@ def moveGate(gp):
     
     gp.lcdDisplay.writeInfo("Please insert", "your vote")
     gp.servoMotor.openGate()
-    gp.lcdDisplay.writeInfo("Please confirm", "to close the gate")
+    gp.lcdDisplay.writeInfo("Please confirm", "to close gate")
     while True:
         cg = input()
         if cg == "/":
@@ -32,8 +32,9 @@ def insertVote(gp, vote_detector):
     voteResult = None
     ballot_id = None
     vote_type = None
+    tentatives = 0
         
-    while ballot_id is None or voteResult is None:
+    while ballot_id is None or voteResult is None and tentatives < 5:
         gp.lcdDisplay.writeInfo("Analyzing vote", "Wait detection")
         gp.led.turnOn(gp.led.yellowLed)
         moveBallot('abrir', gp, conveyorTime=3)
@@ -53,7 +54,13 @@ def insertVote(gp, vote_detector):
                 if ip == '/':
                     userWithVote = True
                     moveGate(gp)
-
+        
+        if ballot_id is not None:
+            while tentatives < 5:
+                print("tentative", str(tentatives))
+                ballot_id, voteResult, vote_type = detectAndComputeVote(frame, vote_detector)
+                tentatives += 1
+                
         print("ballot_id", ballot_id)
         print("voteResult",voteResult)
         print("vote_type", vote_type)
