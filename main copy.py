@@ -56,6 +56,8 @@ def insertVote(gp, vote_detector):
                     moveGate(gp)
         
         if ballot_id is not None:
+            print("***********************")
+            print(ballot_id)
             while tentatives < 5 and voteResult is None:
                 print("tentative", str(tentatives))
                 ballot_id, voteResult, vote_type = detectAndComputeVote(frame, vote_detector)
