@@ -177,7 +177,7 @@ def main():
     
     loginErrorMssg = {0: ('Invalid finger', 'Try again'), 1:('Invalid finger', 'Try again'), 2:('Invalid finger', 'change method')}
     votesNeeded = db.getVoters()
-    print(votesNeeded)
+    print("votesNeeded: ", votesNeeded)
     while True:
         
         isElectionTime = db.electionTime()
@@ -201,8 +201,6 @@ def main():
                     #print("Waiting for", "voter's finger")
                     gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
                     fingerResult = gp.fingerprintSensor.searchFinger()
-                    #fingerResult = "40"
-                    print(fingerResult)
                     validVoter = db.getVoter(str(fingerResult))   # verifica se o id é válido
                     print(validVoter)
                     #print(validVoter)
