@@ -8,7 +8,6 @@ from vote_detection import VoteDetector
 import pandas as pd
 
 def moveBallot(direction, gp, conveyorTime):
-    #print('moveBallot', direction, conveyorTime)
     
     for i in range(0, conveyorTime):
         gp.stepperMotor.controlPort(direction)
@@ -16,16 +15,12 @@ def moveBallot(direction, gp, conveyorTime):
         
 def moveGate(gp):
     
-    #print("Please insert", "your vote")
     gp.lcdDisplay.writeInfo("Please insert", "your vote")
-    #print("open gate")
     gp.servoMotor.openGate()
-    #print("Please confirm to", "close the gate")
     gp.lcdDisplay.writeInfo("Please confirm to", "close the gate")
     while True:
         cg = input()
         if cg == "/":
-            #print("close gate")
             gp.servoMotor.closeGate()
             break
     
@@ -39,7 +34,6 @@ def insertVote(gp, vote_detector):
     vote_type = None
         
     while ballot_id is None or voteResult is None:
-        #print("Analyzing vote", "Wait detection")
         gp.lcdDisplay.writeInfo("Analyzing vote", "Wait detection")
         gp.led.turnOn(gp.led.yellowLed)
         moveBallot('abrir', gp, conveyorTime=3)
@@ -47,14 +41,12 @@ def insertVote(gp, vote_detector):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT,  480)
         ret, frame = cap.read()
-        #print("detectAndComputeVote")
         ballot_id, voteResult, vote_type = detectAndComputeVote(frame, vote_detector)
         
         if ballot_id == 0:
             userWithVote = False
             while not userWithVote:
                 gp.lcdDisplay.writeInfo("Vote is ", "upside down")
-                #print('Virado para baixo')
                 moveBallot('fechar', gp, conveyorTime=15)
                 gp.lcdDisplay.writeInfo("Are you ready?", "Confirm?")
                 ip = input()
@@ -66,10 +58,9 @@ def insertVote(gp, vote_detector):
         print("voteResult",voteResult)
         print("vote_type", vote_type)
 
-        #cap.release()
+        cap.release()
             
     gp.led.turnOff(gp.led.yellowLed)
-    #print("Vote detected!")
     gp.lcdDisplay.writeInfo("Vote detected!", "")
     return ballot_id, voteResult, vote_type
  
@@ -81,11 +72,9 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
         elif vote_type == 2:
             voteResult = 'Blank'
 
-        #print(voteResult, "Confirm ?")    
         gp.lcdDisplay.writeInfo(voteResult, "Confirm?")
         voteConfirmation = input()
         if voteConfirmation == '/':
-            print("Vote confirmed!", "Thank you")
             gp.lcdDisplay.writeInfo("Vote confirmed!", "Thank you")
             gp.led.turnOn(gp.led.greenLed)
             db.insertVote(ballot_id, voteResult, vote_type)
@@ -94,33 +83,27 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
             gp.led.turnOff(gp.led.greenLed)
             return 1
         elif voteConfirmation == '*':
-            #print('esteira para tras')
-            #print("Vote canceled!")
             gp.lcdDisplay.writeInfo("Vote canceled!", "")
             gp.led.turnOn(gp.led.redLed)
             moveBallot('fechar', gp, conveyorTime=15)
             gp.led.turnOff(gp.led.redLed)
             userWithVote = False
             while not userWithVote:
-                #print("Are you ready?", " Please confirm")
                 gp.lcdDisplay.writeInfo("Are you ready?", " Please confirm")
                 ip = input()
                 if ip == '/':
                     userWithVote = True
             return None
         else:
-            # print("Invalid option", "/-OK  *-NOK")
             gp.lcdDisplay.writeInfo("Invalid option", "/-OK  *-NOK")       
         
 
 def initVotingProcess(gp, vote_detector, db, voter):
     
     gp.led.turnOn(gp.led.greenLed)
-    #print("Auth is done", "")
     gp.lcdDisplay.writeInfo("Auth is done", "")
     db.setVoterStatus(voter, "auth")
     sleep(3)
-    #print("Please fill your", "ballot")
     gp.lcdDisplay.writeInfo("Please fill your", "ballot")
     sleep(3)
     gp.led.turnOff(gp.led.greenLed)
@@ -154,7 +137,6 @@ def recountVotes(db, gp, vote_detector):
     votesDict = {}
     for i in range(0, numberOfVotes):
         while ballot_id is None or voteResult is None:
-        #print("Analyzing vote", "Wait detection")
             gp.lcdDisplay.writeInfo("Analyzing vote "+str(i))
             gp.led.turnOn(gp.led.yellowLed)
             moveBallot('abrir', gp, conveyorTime=3)
