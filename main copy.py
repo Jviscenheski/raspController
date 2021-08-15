@@ -180,6 +180,8 @@ def main():
             authTries = 0
             while validVoter is None:
                 while authTries < 3:
+                    gp.led.turnOff(gp.led.yellowLed)
+                    gp.led.turnOn(gp.led.redLed)
                     #print("Waiting for", "voter's finger")
                     gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
                     fingerResult = gp.fingerprintSensor.searchFinger()
@@ -188,17 +190,16 @@ def main():
                     #print(validVoter)
                     if validVoter is None: 
                         #print("Voter didn't", "recognized")
-                        gp.lcdDisplay.writeInfo("Voter didn't", "recognized")
+                        gp.lcdDisplay.writeInfo("Voter not", "recognized")
                         authTries += 1
                         sleep(3)
                     else:
                         if validVoter['status'] == 'pending':
                             initVotingProcess(gp, vote_detector, db, validVoter)
                         elif validVoter['status'] == "auth":
-                            gp.led.turnOff(gp.led.yellowLed)
-                            gp.led.turnOn(gp.led.redLed)
+                            
                             #print("You're auth", "but didnt vote")
-                            gp.lcdDisplay.writeInfo("You're auth", "but didnt vote")
+                            gp.lcdDisplay.writeInfo("Authenticated but", "did not vote")
                             sleep(3)
                         else:
                             gp.led.turnOff(gp.led.yellowLed)
