@@ -17,7 +17,7 @@ def moveGate(gp):
     
     gp.lcdDisplay.writeInfo("Please insert", "your vote")
     gp.servoMotor.openGate()
-    gp.lcdDisplay.writeInfo("Please confirm to", "close the gate")
+    gp.lcdDisplay.writeInfo("Please confirm", "to close the gate")
     while True:
         cg = input()
         if cg == "/":
@@ -83,7 +83,7 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
             gp.led.turnOff(gp.led.greenLed)
             return 1
         elif voteConfirmation == '*':
-            gp.lcdDisplay.writeInfo("Vote canceled!", "")
+            gp.lcdDisplay.writeInfo("Vote cancelled!", "")
             gp.led.turnOn(gp.led.redLed)
             moveBallot('fechar', gp, conveyorTime=15)
             gp.led.turnOff(gp.led.redLed)
@@ -181,7 +181,6 @@ def main():
             while validVoter is None:
                 while authTries < 3:
                     gp.led.turnOff(gp.led.yellowLed)
-                    gp.led.turnOn(gp.led.redLed)
                     #print("Waiting for", "voter's finger")
                     gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
                     fingerResult = gp.fingerprintSensor.searchFinger()
