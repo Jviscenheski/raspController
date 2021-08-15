@@ -223,13 +223,12 @@ class VoteDetector:
             rotated_image = self.drawCircles(rotated_image, circles)
 
         marked_circles, centroids = self.detectMarkedCircles(rotated_image, circles)
+        valid_vote = self.detectVote(marked_circles, centroids)
 
         if marked_circles.count(1) == 0:
-            return rotated_image, marker_id, 2, None
+            return rotated_image, marker_id, 2, valid_vote
         elif marked_circles.count(1) > 1:
-            return rotated_image, marker_id, 1, None
-
-        valid_vote = self.detectVote(marked_circles, centroids)
+            return rotated_image, marker_id, 1, valid_vote
 
         return rotated_image, marker_id, 0, valid_vote
         #
