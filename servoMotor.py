@@ -1,4 +1,5 @@
 import pigpio
+from time import sleep
 
 class ServoMotor:
 

@@ -86,6 +86,7 @@ class FingerprintSensor():
         except Exception as e:
             print('Operation failed!')
             print('Exception message: ' + str(e))
-            exit(1)
+            return -1
+            # exit(1)
         
         return result[0]

@@ -20,9 +20,9 @@ class LED:
     def __init__(self):
 
         # leds
-        self.greenLed = 14
+        self.greenLed = 15
         self.redLed = 18
-        self.yellowLed = 15
+        self.yellowLed = 14
 
         self.initLEDS()     
 

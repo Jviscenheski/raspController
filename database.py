@@ -1,6 +1,6 @@
 import datetime
 from pymongo import MongoClient
-
+from datetime import timedelta
 
 class Database:
 
@@ -11,7 +11,11 @@ class Database:
         self.schedule = self.db.elections
         self.votes = self.db.votes
         self.voters = self.db.voters
-
+        self.candidates = self.db.candidates
+    
+    def utc_to_local(utc_dt):
+        return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
+    
     def getSchedule(self):
         try:
             election_schedule = self.schedule.find_one(
@@ -27,8 +31,10 @@ class Database:
                 {"realm_id": "123"},
             )
             
-            election_start = schedule['electionStart']
-            election_finish = schedule['electionFinish']
+            election_start = schedule['electionStart'] - timedelta(hours=3, minutes=0)
+            election_finish = schedule['electionFinish'] - timedelta(hours=3, minutes=0)
+            print(election_start)
+            print(election_finish)
             
             if election_start <= datetime.datetime.now() and election_finish >= datetime.datetime.now():
                 return True
@@ -37,12 +43,13 @@ class Database:
         except Exception as e:
             print(e)
 
-    def insertVote(self, ballot, candidate):
+    def insertVote(self, ballot, candidate, vote_type):
         inserted_vote = None
         try:
             self.votes.insert_one(
-                {"ballotId": ballot,
-                 "candidateName": candidate}
+                {"ballotId": str(ballot),
+                 "candidateName": candidate,
+                 "type": str(vote_type)}
             )
             inserted_vote = self.votes.find_one(
                 {"ballotId": ballot},
@@ -50,6 +57,20 @@ class Database:
         except Exception as e:
             print(e)
         return inserted_vote
+    
+    def setVoterStatus(self, voter, status):
+        status_return = None
+        try:
+            self.voters.find_one_and_update(
+                {"userId":voter}, {'$set':{"status":status}}
+            )
+            status_return = self.voters.find_one(
+                {"userId":voter},
+            )
+        except Exception as e:
+            print(e)
+        return status_return
+    
 
     def getVoter(self, user_id):
         try:
@@ -60,6 +81,15 @@ class Database:
             print(e)
         return voter
 
+    def getCandidates(self):
+        candidates = None
+        try:
+            cl = list(self.candidates.find({}, {"name":1, "_id":0}))
+            candidates = [d['name'] for d in cl]
+        except Exception as e:
+            print(e)
+            
+        return candidates
 
 # dt = Database()
 # schedule = dt.getSchedule('Election0')

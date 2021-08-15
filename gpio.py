@@ -28,7 +28,7 @@ class GPIO:
 
         self.lcdDisplay = LCDDisplay()   
 
-        self.cameraObj = PiCamera()  
+        # self.cameraObj = PiCamera()  
 
         # rasp path to examples --> /usr/share/doc/python-fingerprint/examples 
         self.fingerprintSensor = FingerprintSensor()

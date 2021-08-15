@@ -49,6 +49,7 @@ class LCDDisplay():
     def writeInfo(self, line1, line2):
         
         self.lcd.clear()
+        #sleep(0.3)
         self.lcd.message = line1 + '\n' + line2
 
 
