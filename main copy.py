@@ -112,14 +112,14 @@ def insertVote(gp, vote_detector):
                 
         
                 
-            tentatives += 1
-            print("tentatives", tentatives)
-            print("ballot_id", ballot_id)
-            print("voteResult",voteResult)
-            print("vote_type", vote_type)
+        tentatives += 1
+        print("tentatives", tentatives)
+        print("ballot_id", ballot_id)
+        print("voteResult",voteResult)
+        print("vote_type", vote_type)
 
-            if not CVXUNXO:
-                cap.release()
+        if not CVXUNXO:
+            cap.release()
             
     gp.led.turnOff(gp.led.yellowLed)
     if vote_type is not None:
