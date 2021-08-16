@@ -34,7 +34,7 @@ def insertVote(gp, vote_detector):
     vote_type = None
     tentatives = 0
         
-    while ballot_id is None or voteResult is None and tentatives < 5:
+    while (ballot_id is None or vote_type is None) and tentatives < 5:
         gp.lcdDisplay.writeInfo("Analyzing vote", "Wait detection")
         gp.led.turnOn(gp.led.yellowLed)
         moveBallot('abrir', gp, conveyorTime=3)
@@ -58,11 +58,27 @@ def insertVote(gp, vote_detector):
         if ballot_id is not None:
             print("***********************")
             print(ballot_id)
-            while tentatives < 5 and voteResult is None:
-                print("tentative", str(tentatives))
+            tentatives_cap = 0
+            vote_list = []
+            lastResult = None
+            while tentatives_cap < 3:
+                print("tentative_cap", str(tentatives_cap))
+                ret, frame = cap.read()
                 ballot_id, voteResult, vote_type = detectAndComputeVote(frame, vote_detector)
-                tentatives += 1
-
+                if vote_type is not None:
+                    if vote_type is 0:
+                        lastResult = voteResult
+                    vote_list.append(vote_type)
+                    tentatives_cap += 1
+            print(vote_list)
+            vote_type = max(set(vote_list), key=vote_list.count)
+            if vote_type is 0:
+                voteResult = lastResult
+                
+        
+                
+        tentatives += 1
+        print("tentatives", tentatives)
         print("ballot_id", ballot_id)
         print("voteResult",voteResult)
         print("vote_type", vote_type)
@@ -70,7 +86,12 @@ def insertVote(gp, vote_detector):
         cap.release()
             
     gp.led.turnOff(gp.led.yellowLed)
-    gp.lcdDisplay.writeInfo("Vote detected!", "")
+    if vote_type is not None:
+        gp.lcdDisplay.writeInfo("Vote detected!", "")
+    else:
+        gp.lcdDisplay.writeInfo("Vote not", "detected")
+    sleep(2)
+    
     return ballot_id, voteResult, vote_type
  
 def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
@@ -86,7 +107,7 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
         if voteConfirmation == '/':
             gp.lcdDisplay.writeInfo("Vote confirmed!", "Thank you")
             gp.led.turnOn(gp.led.greenLed)
-            db.insertVote(ballot_id, voteResult, vote_type)
+            db.insertVote(str(ballot_id), voteResult, vote_type)
             db.setVoterStatus(voter['userId'], "complete")
             moveBallot('abrir', gp, conveyorTime=25)
             gp.led.turnOff(gp.led.greenLed)
@@ -94,7 +115,7 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
         elif voteConfirmation == '*':
             gp.lcdDisplay.writeInfo("Vote cancelled!", "")
             gp.led.turnOn(gp.led.redLed)
-            moveBallot('fechar', gp, conveyorTime=15)
+            moveBallot('fechar', gp, conveyorTime=25)
             gp.led.turnOff(gp.led.redLed)
             userWithVote = False
             while not userWithVote:
@@ -110,6 +131,7 @@ def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
 def initVotingProcess(gp, vote_detector, db, voter):
     
     gp.led.turnOn(gp.led.greenLed)
+    gp.led.turnOff(gp.led.yellowLed)
     gp.lcdDisplay.writeInfo("Auth is done", "")
     db.setVoterStatus(voter, "auth")
     sleep(3)
@@ -118,10 +140,19 @@ def initVotingProcess(gp, vote_detector, db, voter):
     gp.led.turnOff(gp.led.greenLed)
     
     voteConfirmed = None
+    #voteList = []
+    #l  = 0
     while voteConfirmed is None:
+        #while l < 3:
         ballot_id, voteResult, vote_type = insertVote(gp, vote_detector)
-        voteConfirmed = checkVote(gp, voteResult, db, ballot_id, voter, vote_type)
-    
+        #    voteList.append(vote_type)
+        #    l += 1
+        #if l[0] == l[1] and l[1] == l[2]:
+        if vote_type is None:
+            moveBallot('fechar', gp, conveyorTime=20)
+        else:
+            voteConfirmed = checkVote(gp, voteResult, db, ballot_id, voter, vote_type)
+
     print(ballot_id, voteConfirmed)
     
     
@@ -189,7 +220,7 @@ def main():
             authTries = 0
             while validVoter is None:
                 while authTries < 3:
-                    gp.led.turnOff(gp.led.yellowLed)
+                    # gp.led.turnOff(gp.led.yellowLed)
                     #print("Waiting for", "voter's finger")
                     gp.lcdDisplay.writeInfo("Waiting for", "voter's finger")
                     fingerResult = gp.fingerprintSensor.searchFinger()

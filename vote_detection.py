@@ -180,7 +180,7 @@ class VoteDetector:
         grayed = img
         blurried = cv2.medianBlur(grayed, 5)
         circles = cv2.HoughCircles(blurried, cv2.HOUGH_GRADIENT, 1, 30,
-                                   param1=50, param2=30, minRadius=12, maxRadius=50)
+                                   param1=50, param2=30, minRadius=6, maxRadius=25)
 
         return circles
 

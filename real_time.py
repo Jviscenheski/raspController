@@ -3,7 +3,7 @@ from vote_detection import VoteDetector
 
 # frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/ballotAR.png')
 # frame = cv2.imread('/home/rafh/git/local/DetectCircle/src/hue2.png')
-vote_labels = ['Vote3', 'Vote2', 'Vote1']
+vote_labels = ['Vote1', 'Vote2', 'Vote3']
 
 
 def getMode(lst):
@@ -31,6 +31,8 @@ def execute():
         print('Ballot id: ', ballot_id)
 
         print('Vote: ', valid_vote)
+        
+        print('Vote type', vote_type)
 
         # if ballot_id is None:
         #     cv2.imshow('Pipa - Circle Detection', frame)
