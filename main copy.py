@@ -57,8 +57,7 @@ def insertVote(gp, vote_detector):
     ballot_id = None
     vote_type = None
     tentatives = 0
-    tentatives_upsidedown = 0 
-    while (ballot_id is None or vote_type is None) and tentatives < 5 and tentatives_upsidedown < 2:
+    while (ballot_id is None or vote_type is None) and tentatives < 5:
         gp.lcdDisplay.writeInfo("Analyzing vote", "Wait detection")
         gp.led.turnOn(gp.led.yellowLed)
         moveBallot('frente', gp, conveyorTime=3)
@@ -75,7 +74,6 @@ def insertVote(gp, vote_detector):
         if ballot_id == 0:
             ballotUpsideDown(gp)
             tentatives = 0
-            tentatives_upsidedown += 1
             ballot_id, voteResult, vote_type = None, None, None
 
         elif ballot_id is not None:
