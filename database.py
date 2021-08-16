@@ -163,6 +163,25 @@ class Database:
             print(e)
         return found
 
+
+    def votesEmpty(self):
+        success = False
+        try:
+            self.votes.remove({})
+            success = True
+        except Exception as e:
+            print(e)
+        return success
+    
+    def setVotersPending(self):
+        success = False
+        try:
+            self.voters.update({},{'$set':{"status":"pending"}})
+            success = True
+        except Exception as e:
+            print(e)
+        return success
+
 #dt = Database()
 # schedule = dt.getSchedule('Election0')
 # schedule

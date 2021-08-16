@@ -363,13 +363,19 @@ def afterElectionRoutine(gp,db,vote_detector):
         gp.lcdDisplay.writeInfo("Election", "finished")
 
     sleep(10)
-    
+
+def resetElection(db):
+    db.votesEmpty()
+    db.setVotersPending()
+
 def main():
     gp = GPIO()
     db = Database()
     vote_labels = db.getCandidates()
     vote_detector = VoteDetector(vote_labels)
     
+    #resetElection(db)
+
     while True:
         
         beforeElection, afterElection = db.electionTime()
