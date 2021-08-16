@@ -6,7 +6,12 @@ All rights reserved.
 """
 
 import tempfile
-from pyfingerprint.pyfingerprint import PyFingerprint
+try:
+    from pyfingerprint.pyfingerprint import PyFingerprint
+    RASPI = True
+except:
+    from sim_raspi import PyFingerprint
+    RASPI = False
 
 
 class FingerprintSensor():

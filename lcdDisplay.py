@@ -1,9 +1,16 @@
 from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
-import board
-import digitalio
-import adafruit_character_lcd.character_lcd as characterlcd
+try:
+    import board
+    import digitalio
+    import adafruit_character_lcd.character_lcd as characterlcd
+    RASPI=True
+except:
+    from sim_raspi import board
+    from sim_raspi import digitalio
+    from sim_raspi import characterlcd
+    RASPI=False
 
 
 class LCDDisplay():
@@ -34,20 +41,9 @@ class LCDDisplay():
         self.lcd.clear()
         
         sleep(2)
-        '''
-        # date and time
-        lcd_line_1 = datetime.now().strftime('%b %d  %H:%M:%S\n')
-
-        # current ip address
-        lcd_line_2 = "ELECTION PIPA"
-
-        # combine both lines into one update to the display
-        self.writeInfo(lcd_line_1, lcd_line_2)
-        # self.lcd.message = lcd_line_1 + lcd_line_2
-        '''
 
     def writeInfo(self, line1, line2):
-        
+        print(line1 + ' ' + line2)
         self.lcd.clear()
         #sleep(0.3)
         self.lcd.message = line1 + '\n' + line2

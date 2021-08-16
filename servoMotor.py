@@ -1,4 +1,12 @@
-import pigpio
+from fingerprintSensor import RASPI
+
+
+try:
+    import pigpio
+    RASPI=True
+except:
+    import sim_raspi as pigpio
+    RASPI=False
 from time import sleep
 
 class ServoMotor:

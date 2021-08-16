@@ -1,4 +1,9 @@
-import RPi.GPIO as gpioLib
+try:
+    import RPi.GPIO as gpioLib
+    RASPI=True
+except:
+    from sim_raspi import RPiGPIO as gpioLib
+    RASPI = False
 import time
 
 class StepperMotor:
@@ -32,7 +37,7 @@ class StepperMotor:
            [0,0,1,1],
            [0,0,0,1]]
         
-        if direction=='abrir':
+        if direction=='frente':
             self.forward()
         else:
             self.backwards()

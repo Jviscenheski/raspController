@@ -12,6 +12,8 @@ class Database:
         self.votes = self.db.votes
         self.voters = self.db.voters
         self.candidates = self.db.candidates
+        self.recount = self.db.recount
+        self.votesRecount = self.db.votesRecount
     
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
@@ -34,10 +36,10 @@ class Database:
             election_start = schedule['electionStart'] - timedelta(hours=3, minutes=0)
             election_finish = schedule['electionFinish'] - timedelta(hours=3, minutes=0)
             
-            if election_start <= datetime.datetime.now() and election_finish >= datetime.datetime.now():
-                return True
-            else:
-                return False
+            before = election_start > datetime.datetime.now()
+            after = election_finish < datetime.datetime.now()
+
+            return before, after
         except Exception as e:
             print(e)
 
@@ -99,7 +101,69 @@ class Database:
     def getVotes(self):
         return self.votes.count()
 
-# dt = Database()
+    def findBallotId(self,id):
+        found = None
+        try:
+            found = self.votes.find_one({'ballotId':id})
+        except Exception as e:
+            print(e)
+        return found
+
+    def getRecountStatus(self):
+        mode = None
+        alreadyRecounted = None
+        try:
+            recount = self.recount.find_one({'realm_id':'123'})            
+            if recount is not None:
+                mode = recount["recountModeOn"]
+                alreadyRecounted = recount["alreadyRecounted"]
+        except Exception as e:
+            print(e)
+        return mode, alreadyRecounted  
+
+    def finishRecount(self):
+        recount_return = None
+        try:
+            self.recount.find_one_and_update({'realm_id':'123'},{'$set':{"recountModeOn":False,"alreadyRecounted":True}})
+
+            recount_return = self.recount.find_one({'realm_id':'123'})   
+        except Exception as e:
+            print(e)
+        return recount_return 
+
+    def votesRecountEmpty(self):
+        success = False
+        try:
+            self.votesRecount.remove({})
+            success = True
+        except Exception as e:
+            print(e)
+        return success
+
+    def insertVoteRecount(self, ballot, candidate, vote_type):
+        inserted_vote = None
+        try:
+            self.votesRecount.insert_one(
+                {"ballotId": str(ballot),
+                 "candidateName": candidate,
+                 "type": str(vote_type)}
+            )
+            inserted_vote = self.votesRecount.find_one(
+                {"ballotId": ballot},
+            )
+        except Exception as e:
+            print(e)
+        return inserted_vote
+
+    def findRecountBallotId(self,id):
+        found = None
+        try:
+            found = self.votesRecount.find_one({'ballotId':id})
+        except Exception as e:
+            print(e)
+        return found
+
+#dt = Database()
 # schedule = dt.getSchedule('Election0')
 # schedule
 # dt.electionTime('Election0')

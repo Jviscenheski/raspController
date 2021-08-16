@@ -1,9 +1,13 @@
-from fingerprintSensor import FingerprintSensor
-import RPi.GPIO as gpioLib
+try:
+    import RPi.GPIO as gpioLib
+    import busio as io
+    import adafruit_mlx90614 as ada
+    from picamera import PiCamera
+    import board
+    RASPI=True
+except:
+    RASPI=False
 import time
-import board
-import busio as io
-import adafruit_mlx90614 as ada
 from time import sleep
 import smtplib
 from datetime import datetime
@@ -11,7 +15,6 @@ import random
 from stepperMotor import StepperMotor
 from servoMotor import ServoMotor
 from lcdDisplay import LCDDisplay
-from picamera import PiCamera
 from fingerprintSensor import FingerprintSensor
 from led import LED
 
