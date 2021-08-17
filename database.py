@@ -176,7 +176,16 @@ class Database:
     def setVotersPending(self):
         success = False
         try:
-            self.voters.update({},{'$set':{"status":"pending"}})
+            self.voters.update_many({},{'$set':{"status":"pending"}})
+            success = True
+        except Exception as e:
+            print(e)
+        return success
+
+    def setAuthVotersAsPending(self):
+        success = False
+        try:
+            self.voters.update_many({"status":"auth"},{'$set':{"status":"pending"}})
             success = True
         except Exception as e:
             print(e)

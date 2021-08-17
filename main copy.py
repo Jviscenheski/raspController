@@ -14,8 +14,10 @@ from database import Database
 import cv2
 from vote_detection import VoteDetector
 import pandas as pd
+from os import path
 
-
+CONVEYOR_TIME_FULL = 20
+STATE_FILE = "saveState.txt"
 
 def moveBallot(direction, gp, conveyorTime):
     print("Conveyor belt is moving")
@@ -42,7 +44,7 @@ def ballotUpsideDown(gp):
     userWithVote = False
     while not userWithVote:
         gp.lcdDisplay.writeInfo("Vote is", "upside down")
-        moveBallot('tras', gp, conveyorTime=15)
+        moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
         gp.lcdDisplay.writeInfo("Are you ready?", "Confirm?")
         print("Waiting input")
         ip = input()
@@ -135,14 +137,16 @@ def voteConfirmed(gp, voteResult, db, ballot_id, voter, vote_type):
     gp.led.turnOn(gp.led.greenLed)
     db.insertVote(str(ballot_id), voteResult, vote_type)
     db.setVoterStatus(voter['userId'], "complete")
-    moveBallot('frente', gp, conveyorTime=25)
+    setSaveState(2)
+    moveBallot('frente', gp, conveyorTime=CONVEYOR_TIME_FULL)
+    setSaveState(0)
     gp.led.turnOff(gp.led.greenLed)
     return 1
 
 def voteCancelled(gp):
     gp.lcdDisplay.writeInfo("Vote cancelled!", "")
     gp.led.turnOn(gp.led.redLed)
-    moveBallot('tras', gp, conveyorTime=25)
+    moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
     gp.led.turnOff(gp.led.redLed)
     userWithVote = False
     while not userWithVote:
@@ -186,14 +190,14 @@ def initVotingProcess(gp, vote_detector, db, voter):
         ballot_id, voteResult, vote_type = insertVote(gp, vote_detector)
         if vote_type is None:
             gp.lcdDisplay.writeInfo("Returning your", "vote")
-            moveBallot('tras', gp, conveyorTime=20)
+            moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
         else:
             ballotFound = db.findBallotId(str(ballot_id))
             if ballotFound is None:                
                 voteConfirmed = checkVote(gp, voteResult, db, ballot_id, voter, vote_type)
             else:
                 gp.lcdDisplay.writeInfo("Invalid ballot", "Insert another")
-                moveBallot('tras', gp, conveyorTime=20)
+                moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
     
     
 '''
@@ -214,28 +218,28 @@ def detectAndComputeVote(frame, vote_detector):
 
 def recountVoteNotDetected(gp):
     gp.lcdDisplay.writeInfo("Returning the", "vote")
-    moveBallot('tras', gp, conveyorTime=20)
+    moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
 
 def recountBallotIDNotFound(gp):
     gp.lcdDisplay.writeInfo("Invalid ballot", "Not found")
-    moveBallot('tras', gp, conveyorTime=20)
+    moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
 
 def recountBallotIDDuplicate(gp):
     gp.lcdDisplay.writeInfo("Invalid ballot", "Duplicate")
-    moveBallot('tras', gp, conveyorTime=20)
+    moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
 
 def recountSaveBallot(gp,db,ballot_id,voteResult,vote_type):
     gp.led.turnOn(gp.led.greenLed)
     db.insertVoteRecount(str(ballot_id), voteResult, vote_type)
-    moveBallot('frente', gp, conveyorTime=25)
+    setSaveState(4)
+    moveBallot('frente', gp, conveyorTime=CONVEYOR_TIME_FULL)
+    setSaveState(3)
     gp.led.turnOff(gp.led.greenLed)
 
 def recountVotes(gp, db, vote_detector): 
     gp.lcdDisplay.writeInfo("Starting recount", "mode")  
-    db.votesRecountEmpty()
-
     insertNewVote = None
-    while insertNewVote != "*":
+    while insertNewVote != "*":        
         ballot_id, voteResult, vote_type = insertVote(gp, vote_detector)
         if vote_type is None:
             recountVoteNotDetected(gp)
@@ -248,7 +252,7 @@ def recountVotes(gp, db, vote_detector):
                 else:
                     recountBallotIDDuplicate(gp)
             else: 
-                recountBallotIDNotFound(gp)
+                recountBallotIDNotFound(gp)        
         gp.lcdDisplay.writeInfo("Insert another", "vote?")
         print("Waiting for input")
         insertNewVote = input()
@@ -256,25 +260,6 @@ def recountVotes(gp, db, vote_detector):
     print(ballot_id, voteConfirmed)
 
     db.finishRecount()
-    '''
-    numberOfVotes = db.getVotes()
-    votesDict = {}
-    for i in range(0, numberOfVotes):
-        while ballot_id is None or voteResult is None:
-            gp.lcdDisplay.writeInfo("Analyzing vote "+str(i))
-            gp.led.turnOn(gp.led.yellowLed)
-            moveBallot('frente', gp, conveyorTime=3)
-            cap = cv2.VideoCapture(0)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT,  480)
-            ret, frame = cap.read()
-            ballot_id, voteResult, vote_type = detectAndComputeVote(frame, vote_detector)
-        
-        votesDict['i'] = [ballot_id, voteResult]
-
-    df = pd.DataFrame.from_dict(votesDict, orient='index', columns=['ballot_id', 'candidate'])
-    print(df)
-    '''
 
 def beforeElectionRoutine(gp):
     gp.lcdDisplay.writeInfo("Waiting for", "election start")
@@ -285,6 +270,7 @@ def validVoterFound(gp, db, validVoter):
     if validVoter['status'] == 'pending':
         gp.lcdDisplay.writeInfo("Voter is", "authenticated")
         db.setVoterStatus(validVoter["userId"], "auth")
+        setSaveState(1)
         sleep(2)
         return True, validVoter
     elif validVoter['status'] == "complete":                
@@ -352,21 +338,28 @@ def duringElectionRoutine(gp,db,vote_detector):
             
 
 
-def afterElectionRoutine(gp,db,vote_detector):
-    mode, alreadyRecounted = db.getRecountMode()
-
-    if alreadyRecounted:
-        gp.lcdDisplay.writeInfo("Recount", "finished")
-    elif mode:        
-        recountVotes(gp,db,vote_detector)
-    else:
-        gp.lcdDisplay.writeInfo("Election", "finished")
-
-    sleep(10)
-
 def resetElection(db):
+    print("Reseting election")
     db.votesEmpty()
     db.setVotersPending()
+
+def setSaveState(state):
+    file = open(STATE_FILE,"w")
+    file.write(str(state))
+    file.close()
+    print(f"Setting state: {state}")
+
+def getSaveState():
+    file = open(STATE_FILE,"a+")
+    file.seek(0)
+    state = file.read()
+    if (state == ""):
+        print("Creating save state file")
+        state = "0"
+        file.write(state)
+    file.close()
+    print(f"Getting state: {state}")
+    return state
 
 def main():
     gp = GPIO()
@@ -376,8 +369,28 @@ def main():
     
     #resetElection(db)
 
+    state = getSaveState()
+
+    if state == "1":
+        gp.lcdDisplay.writeInfo("Recovering from", "power outage")
+        db.setAuthVotersAsPending()
+        gp.servoMotor.closeGate()
+        moveBallot("tras",gp, conveyorTime=CONVEYOR_TIME_FULL)
+        setSaveState(0)
+    elif state == "2":
+        gp.lcdDisplay.writeInfo("Recovering from", "power outage")
+        gp.servoMotor.closeGate()
+        moveBallot("frente",gp, conveyorTime=CONVEYOR_TIME_FULL)
+        setSaveState(0)
+    elif state == "3":
+        gp.lcdDisplay.writeInfo("Recovering from", "power outage")
+        moveBallot("tras",gp, conveyorTime=CONVEYOR_TIME_FULL)
+    elif state == "4":
+        gp.lcdDisplay.writeInfo("Recovering from", "power outage")
+        moveBallot("frente",gp, conveyorTime=CONVEYOR_TIME_FULL)
+        setSaveState(3)
+
     while True:
-        
         beforeElection, afterElection = db.electionTime()
         duringElection = not beforeElection and not afterElection
         print(beforeElection, afterElection, duringElection)
@@ -394,7 +407,20 @@ def main():
                 sleep(10)
 
         elif afterElection:
-            afterElectionRoutine(gp,db,vote_detector)
+            mode, alreadyRecounted = db.getRecountStatus()
+
+            if alreadyRecounted:
+                gp.lcdDisplay.writeInfo("Recount", "finished")
+            elif mode: 
+                state = getSaveState()
+                if state == "0":
+                    db.votesRecountEmpty()
+                setSaveState(3)
+                recountVotes(gp,db,vote_detector)
+            else:
+                gp.lcdDisplay.writeInfo("Election", "finished")
+
+            sleep(10)
 
         else:
             print("Se chegou aqui deu ruim")
