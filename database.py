@@ -14,6 +14,7 @@ class Database:
         self.candidates = self.db.candidates
         self.recount = self.db.recount
         self.votesRecount = self.db.votesRecount
+        self.admins = self.db.admins
     
     def utc_to_local(utc_dt):
         return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
@@ -190,6 +191,15 @@ class Database:
         except Exception as e:
             print(e)
         return success
+
+    def getAdmin(self,user_id):
+        try:
+            admin = self.admins.find_one(
+                {"userId": user_id},
+            )
+        except Exception as e:
+            print(e)
+        return admin
 
 #dt = Database()
 # schedule = dt.getSchedule('Election0')

@@ -15,6 +15,7 @@ import cv2
 from vote_detection import VoteDetector
 import pandas as pd
 from os import path
+import signal
 
 CONVEYOR_TIME_FULL = 20
 STATE_FILE = "saveState.txt"
@@ -27,18 +28,42 @@ def moveBallot(direction, gp, conveyorTime):
         gp.stepperMotor.controlPort(direction)
     print("Conveyor belt has stopped")
         
-        
-def moveGate(gp):
-    gp.lcdDisplay.writeInfo("Please insert", "your vote")
+
+def signal_handler(signum, frame):
+    raise Exception("Timeout!")
+
+def moveGate(gp,voteWasEjected=False):
+    gp.lcdDisplay.writeInfo("Insert your", "vote face up")
     gp.servoMotor.openGate()
     sleep(1)
     gp.lcdDisplay.writeInfo("Please confirm", "to close gate")
-    while True:
-        print("Waiting input")
-        cg = input()
-        if cg == "/":
-            gp.servoMotor.closeGate()
-            break
+    try:
+        signal.signal(signal.SIGALRM, signal_handler)
+    except:
+        print("Rodando sem timeout")
+        while True:
+            print("Waiting input")
+            cg = input()
+            if cg == "/":
+                gp.servoMotor.closeGate()
+                return True
+    else:
+        print("Rodando com timeout")
+        if voteWasEjected:
+            signal.alarm(120) # 2 minutes
+        try:
+            while True:
+                print("Waiting input")
+                cg = input()
+                if cg == "/":
+                    signal.alarm(0) # Reset
+                    gp.servoMotor.closeGate()
+                    return True
+        except Exception as e:
+            print(e)
+            if e == "Timeout!":
+                print("Timeout!")
+                return False
 
 def ballotUpsideDown(gp):
     userWithVote = False
@@ -53,7 +78,8 @@ def ballotUpsideDown(gp):
             moveGate(gp)
 
 def insertVote(gp, vote_detector):
-    moveGate(gp)
+    #movido pra fora pra não cagar timeout e recount
+    #moveGate(gp)
     
     voteResult = None
     ballot_id = None
@@ -148,13 +174,14 @@ def voteCancelled(gp):
     gp.led.turnOn(gp.led.redLed)
     moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
     gp.led.turnOff(gp.led.redLed)
-    userWithVote = False
-    while not userWithVote:
-        gp.lcdDisplay.writeInfo("Are you ready?", "Please confirm")
-        print("Waiting input")
-        ip = input()
-        if ip == '/':
-            userWithVote = True
+    # esse trecho aqui embaixo vai cagar o timeout
+    # userWithVote = False
+    # while not userWithVote:
+    #     gp.lcdDisplay.writeInfo("Are you ready?", "Please confirm")
+    #     print("Waiting input")
+    #     ip = input()
+    #     if ip == '/':
+    #         userWithVote = True
     return None
 
 def checkVote(gp, voteResult, db, ballot_id, voter, vote_type):
@@ -185,8 +212,18 @@ def initVotingProcess(gp, vote_detector, db, voter):
     sleep(3)
     gp.led.turnOff(gp.led.greenLed)
     
+    
+    voteWasEjected = False
     voteConfirmed = None
     while voteConfirmed is None:
+        completed = moveGate(gp,voteWasEjected)
+        if completed is False:
+            gp.lcdDisplay.writeInfo("Time limit", "exceeded")
+            db.setVoterStatus(voter['userId'], "pending")
+            gp.servoMotor.closeGate()
+            moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
+            setSaveState(0)
+            return
         ballot_id, voteResult, vote_type = insertVote(gp, vote_detector)
         if vote_type is None:
             gp.lcdDisplay.writeInfo("Returning your", "vote")
@@ -198,6 +235,9 @@ def initVotingProcess(gp, vote_detector, db, voter):
             else:
                 gp.lcdDisplay.writeInfo("Invalid ballot", "Insert another")
                 moveBallot('tras', gp, conveyorTime=CONVEYOR_TIME_FULL)
+        if voteConfirmed is None:
+            voteWasEjected = True
+        
     
     
 '''
@@ -237,6 +277,8 @@ def recountSaveBallot(gp,db,ballot_id,voteResult,vote_type):
     gp.led.turnOff(gp.led.greenLed)
 
 def recountVotes(gp, db, vote_detector): 
+    adminAuth(gp,db)
+
     gp.lcdDisplay.writeInfo("Starting recount", "mode")  
     insertNewVote = None
     while insertNewVote != "*":        
@@ -298,6 +340,18 @@ def fingerAuth(gp,db,vote_detector):
         else:
             return validVoterFound(gp,db,validVoter)
     return False, None
+
+def adminAuth(gp,db):
+    while True:
+        gp.lcdDisplay.writeInfo("Waiting for", "admin's finger")
+        fingerResult = gp.fingerprintSensor.searchFinger()
+        validAdmin = db.getAdmin(str(fingerResult))   # verifica se o id é válido
+        print(validAdmin)
+        if validAdmin is None: 
+            gp.lcdDisplay.writeInfo("Admin not", "recognized")
+            sleep(3)
+        else:
+            return True
 
 def keypadAuth(gp,db,vote_detector):
     authTries = 0
@@ -366,7 +420,9 @@ def main():
     db = Database()
     vote_labels = db.getCandidates()
     vote_detector = VoteDetector(vote_labels)
-    
+
+    moveGate(gp,True)
+    quit()
     #resetElection(db)
 
     state = getSaveState()
